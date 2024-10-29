@@ -41,30 +41,6 @@ sincospi_wrap (double x)
 
 #if WANT_SIMD_TESTS
 
-__vpcs static v_double
-_Z_atan2_wrap (v_double x)
-{
-  return _ZGVnN2vv_atan2 (v_double_dup (5.0), x);
-}
-
-__vpcs static v_float
-_Z_atan2f_wrap (v_float x)
-{
-  return _ZGVnN4vv_atan2f (v_float_dup (5.0f), x);
-}
-
-__vpcs static v_float
-_Z_hypotf_wrap (v_float x)
-{
-  return _ZGVnN4vv_hypotf (v_float_dup (5.0f), x);
-}
-
-__vpcs static v_double
-_Z_hypot_wrap (v_double x)
-{
-  return _ZGVnN2vv_hypot (v_double_dup (5.0), x);
-}
-
 __vpcs static v_float
 _Z_modff_wrap (v_float x)
 {
@@ -79,24 +55,6 @@ _Z_modf_wrap (v_double x)
   v_double y;
   v_double ret = _ZGVnN2vl8_modf (x, &y);
   return ret + y;
-}
-
-__vpcs static v_double
-xy_Z_pow (v_double x)
-{
-  return _ZGVnN2vv_pow (x, x);
-}
-
-__vpcs static v_double
-x_Z_pow (v_double x)
-{
-  return _ZGVnN2vv_pow (x, v_double_dup (23.4));
-}
-
-__vpcs static v_double
-y_Z_pow (v_double x)
-{
-  return _ZGVnN2vv_pow (v_double_dup (2.34), x);
 }
 
 __vpcs static v_float
@@ -150,30 +108,6 @@ _Z_cexpi_wrap (v_double x)
 #if WANT_SVE_MATH
 
 static sv_float
-_Z_sv_atan2f_wrap (sv_float x, sv_bool pg)
-{
-  return _ZGVsMxvv_atan2f (x, svdup_f32 (5.0f), pg);
-}
-
-static sv_double
-_Z_sv_atan2_wrap (sv_double x, sv_bool pg)
-{
-  return _ZGVsMxvv_atan2 (x, svdup_f64 (5.0), pg);
-}
-
-static sv_float
-_Z_sv_hypotf_wrap (sv_float x, sv_bool pg)
-{
-  return _ZGVsMxvv_hypotf (x, svdup_f32 (5.0), pg);
-}
-
-static sv_double
-_Z_sv_hypot_wrap (sv_double x, sv_bool pg)
-{
-  return _ZGVsMxvv_hypot (x, svdup_f64 (5.0), pg);
-}
-
-static sv_float
 _Z_sv_modff_wrap (sv_float x, sv_bool pg)
 {
   float i[svcntw ()];
@@ -199,42 +133,6 @@ static sv_double
 _Z_sv_powk_wrap (sv_double x, sv_bool pg)
 {
   return _ZGVsMxvv_powk (x, svcvt_s64_f64_x (pg, x), pg);
-}
-
-static sv_float
-xy_Z_sv_powf (sv_float x, sv_bool pg)
-{
-  return _ZGVsMxvv_powf (x, x, pg);
-}
-
-static sv_float
-x_Z_sv_powf (sv_float x, sv_bool pg)
-{
-  return _ZGVsMxvv_powf (x, svdup_f32 (23.4f), pg);
-}
-
-static sv_float
-y_Z_sv_powf (sv_float x, sv_bool pg)
-{
-  return _ZGVsMxvv_powf (svdup_f32 (2.34f), x, pg);
-}
-
-static sv_double
-xy_Z_sv_pow (sv_double x, sv_bool pg)
-{
-  return _ZGVsMxvv_pow (x, x, pg);
-}
-
-static sv_double
-x_Z_sv_pow (sv_double x, sv_bool pg)
-{
-  return _ZGVsMxvv_pow (x, svdup_f64 (23.4), pg);
-}
-
-static sv_double
-y_Z_sv_pow (sv_double x, sv_bool pg)
-{
-  return _ZGVsMxvv_pow (svdup_f64 (2.34), x, pg);
 }
 
 static sv_float
