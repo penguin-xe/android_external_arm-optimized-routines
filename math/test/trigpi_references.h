@@ -5,16 +5,14 @@
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
-#define _GNU_SOURCE
 #include "math_config.h"
-#include "mathlib.h"
 
 #ifndef M_PIl
-# define M_PIl 3.141592653589793238462643383279502884l
+#  define M_PIl 3.141592653589793238462643383279502884l
 #endif
 
 long double
-sinpil (long double x)
+arm_math_sinpil (long double x)
 {
   /* sin(inf) should return nan, as defined by C23.  */
   if (isinf (x))
@@ -37,7 +35,7 @@ sinpil (long double x)
 }
 
 long double
-cospil (long double x)
+arm_math_cospil (long double x)
 {
   /* cos(inf) should return nan, as defined by C23.  */
   if (isinf (x))
@@ -63,7 +61,7 @@ cospil (long double x)
 }
 
 long double
-tanpil (long double x)
+arm_math_tanpil (long double x)
 {
   /* inf and x = n + 0.5 for any integral n should return nan.  */
   if (fabsl (x) >= 0x1p54l)

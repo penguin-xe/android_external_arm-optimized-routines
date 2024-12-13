@@ -8,10 +8,10 @@
 #define _GNU_SOURCE
 #include <math.h>
 #include "mathlib.h"
-#include "math_config.h"
+#include "../math_config.h"
 #include "test_sig.h"
 #include "test_defs.h"
-#include "poly_scalar_f64.h"
+#include "../poly_scalar_f64.h"
 
 /* Taylor series coefficents for sin(pi * x).
    C2 coefficient (orginally ~=5.16771278) has been split into two parts:
@@ -33,7 +33,7 @@ static const double poly[]
    sinpi(0x1.a90da2818f8b5p+7) got 0x1.fe358f255a4b3p-1
 			      want 0x1.fe358f255a4b6p-1.  */
 double
-sinpi (double x)
+arm_math_sinpi (double x)
 {
   if (isinf (x) || isnan (x))
     return __math_invalid (x);
@@ -85,10 +85,9 @@ sinpi (double x)
 }
 
 #if WANT_TRIGPI_TESTS
-TEST_SIG (S, D, 1, sinpi, -0.9, 0.9)
-TEST_ULP (sinpi, 2.53)
-TEST_SYM_INTERVAL (sinpi, 0, 0x1p-63, 5000)
-TEST_SYM_INTERVAL (sinpi, 0x1p-63, 0.5, 10000)
-TEST_SYM_INTERVAL (sinpi, 0.5, 0x1p51, 10000)
-TEST_SYM_INTERVAL (sinpi, 0x1p51, inf, 10000)
+TEST_ULP (arm_math_sinpi, 2.53)
+TEST_SYM_INTERVAL (arm_math_sinpi, 0, 0x1p-63, 5000)
+TEST_SYM_INTERVAL (arm_math_sinpi, 0x1p-63, 0.5, 10000)
+TEST_SYM_INTERVAL (arm_math_sinpi, 0.5, 0x1p51, 10000)
+TEST_SYM_INTERVAL (arm_math_sinpi, 0x1p51, inf, 10000)
 #endif

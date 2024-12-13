@@ -5,10 +5,10 @@
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 #include "mathlib.h"
-#include "math_config.h"
+#include "../math_config.h"
 #include "test_sig.h"
 #include "test_defs.h"
-#include "poly_scalar_f64.h"
+#include "../poly_scalar_f64.h"
 
 #define SIGN_MASK 0x8000000000000000
 
@@ -54,7 +54,7 @@ const static struct tanpi_data
    tanpi(0x1.68847e177a855p-2) got 0x1.fe9a0ff9bb9d7p+0
 			      want 0x1.fe9a0ff9bb9d5p+0.  */
 double
-tanpi (double x)
+arm_math_tanpi (double x)
 {
   uint64_t xabs_12 = asuint64 (x) >> 52 & 0x7ff;
 
@@ -142,10 +142,9 @@ tanpi (double x)
 }
 
 #if WANT_TRIGPI_TESTS
-TEST_SIG (S, D, 1, tanpi, -3.1, 3.1)
-TEST_ULP (tanpi, 1.69)
-TEST_SYM_INTERVAL (tanpi, 0, 0x1p-63, 50000)
-TEST_SYM_INTERVAL (tanpi, 0x1p-63, 0.5, 100000)
-TEST_SYM_INTERVAL (tanpi, 0.5, 0x1p53, 100000)
-TEST_SYM_INTERVAL (tanpi, 0x1p53, inf, 100000)
+TEST_ULP (arm_math_tanpi, 1.69)
+TEST_SYM_INTERVAL (arm_math_tanpi, 0, 0x1p-63, 50000)
+TEST_SYM_INTERVAL (arm_math_tanpi, 0x1p-63, 0.5, 100000)
+TEST_SYM_INTERVAL (arm_math_tanpi, 0.5, 0x1p53, 100000)
+TEST_SYM_INTERVAL (arm_math_tanpi, 0x1p53, inf, 100000)
 #endif
