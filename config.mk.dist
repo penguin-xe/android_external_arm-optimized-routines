@@ -6,9 +6,6 @@
 # Subprojects to build
 SUBS = math string networking
 
-# Subsubprojects to build if subproject pl is built
-PLSUBS = math
-
 # Target architecture: aarch64, arm or x86_64
 ARCH = aarch64
 
@@ -101,26 +98,19 @@ math-cflags += -ffp-contract=fast -fno-math-errno
 # Use with clang.
 #math-cflags += -ffp-contract=fast
 
-# Disable/enable SVE vector math code and tests.
-# If WANT_SVE_MATH is enabled, math-sve-cflags is added for SVE
-# routines only so that SVE code does not leak into scalar
-# routines. It is also necessary to add it for tools (e.g. ulp,
-# mathbench)
-WANT_SVE_MATH = 0
-ifeq ($(WANT_SVE_MATH), 1)
-  math-sve-cflags = -march=armv8-a+sve
-endif
-math-cflags += -DWANT_SVE_MATH=$(WANT_SVE_MATH)
-
 # If defined to 1, set errno in math functions according to ISO C.  Many math
 # libraries do not set errno, so this is 0 by default.  It may need to be
 # set to 1 if math.h has (math_errhandling & MATH_ERRNO) != 0.
 WANT_ERRNO = 0
 math-cflags += -DWANT_ERRNO=$(WANT_ERRNO)
 
-# Enable SIMD in tests
-WANT_SIMD_TESTS = 1
-math-cflags += -DWANT_SIMD_TESTS=$(WANT_SIMD_TESTS)
+# Disable/enable SVE vector math tests/tools.
+ifeq ($(ARCH),aarch64)
+  WANT_SVE_TESTS = 1
+else
+  WANT_SVE_TESTS = 0
+endif
+math-cflags += -DWANT_SVE_TESTS=$(WANT_SVE_TESTS)
 
 # If set to 1, set fenv in vector math routines.
 WANT_SIMD_EXCEPT = 0
@@ -130,8 +120,13 @@ math-cflags += -DWANT_SIMD_EXCEPT=$(WANT_SIMD_EXCEPT)
 WANT_EXP10_TESTS = 1
 math-cflags += -DWANT_EXP10_TESTS=$(WANT_EXP10_TESTS)
 
-# If set to 1, enable tests for sinpi and cospi.
-WANT_TRIGPI_TESTS = 1
+# If set to 1, enable tests for sinpi and cospi. These functions are
+# only supported on aarch64
+ifeq ($(ARCH),aarch64)
+  WANT_TRIGPI_TESTS = 1
+else
+  WANT_TRIGPI_TESTS = 0
+endif
 math-cflags += -DWANT_TRIGPI_TESTS=$(WANT_TRIGPI_TESTS)
 
 # Remove GNU Property Notes from asm files.
@@ -148,3 +143,7 @@ networking-cflags += -O2 -fno-tree-vectorize -funroll-loops
 # to interpose math functions with both static and dynamic linking
 USE_GLIBC_ABI = 1
 math-cflags += -DUSE_GLIBC_ABI=$(USE_GLIBC_ABI)
+
+# Enable experimental math routines - non-C23 vector math and low-accuracy scalar
+WANT_EXPERIMENTAL_MATH = 0
+math-cflags += -DWANT_EXPERIMENTAL_MATH=$(WANT_EXPERIMENTAL_MATH)

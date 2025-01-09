@@ -5,6 +5,19 @@
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
+#if WANT_SVE_TESTS
+#  if __aarch64__ && __linux__
+#    ifdef __clang__
+#      pragma clang attribute push(__attribute__((target("sve"))),            \
+				   apply_to = any(function))
+#    else
+#      pragma GCC target("+sve")
+#    endif
+#  else
+#    error "SVE not supported - please disable WANT_SVE_TESTS"
+#  endif
+#endif
+
 #define _GNU_SOURCE
 #include <ctype.h>
 #include <fenv.h>
@@ -16,6 +29,8 @@
 #include <string.h>
 #include "mathlib.h"
 
+#include "trigpi_references.h"
+
 /* Don't depend on mpfr by default.  */
 #ifndef USE_MPFR
 # define USE_MPFR 0
@@ -23,50 +38,6 @@
 #if USE_MPFR
 # include <mpfr.h>
 #endif
-
-static inline uint64_t
-asuint64 (double f)
-{
-  union
-  {
-    double f;
-    uint64_t i;
-  } u = {f};
-  return u.i;
-}
-
-static inline double
-asdouble (uint64_t i)
-{
-  union
-  {
-    uint64_t i;
-    double f;
-  } u = {i};
-  return u.f;
-}
-
-static inline uint32_t
-asuint (float f)
-{
-  union
-  {
-    float f;
-    uint32_t i;
-  } u = {f};
-  return u.i;
-}
-
-static inline float
-asfloat (uint32_t i)
-{
-  union
-  {
-    uint32_t i;
-    float f;
-  } u = {i};
-  return u.f;
-}
 
 static uint64_t seed = 0x0123456789abcdef;
 static uint64_t
@@ -204,42 +175,50 @@ next_d2 (void *g)
 static int secondcall;
 
 /* Wrappers for vector functions.  */
-#ifdef __vpcs
-typedef __f32x4_t v_float;
-typedef __f64x2_t v_double;
+#if __aarch64__ && __linux__
 /* First element of fv and dv may be changed by -c argument.  */
 static float fv[2] = {1.0f, -INFINITY};
 static double dv[2] = {1.0, -INFINITY};
-static inline v_float argf(float x) { return (v_float){x,x,x,fv[secondcall]}; }
-static inline v_double argd(double x) { return (v_double){x,dv[secondcall]}; }
-#if WANT_SVE_MATH
-#include <arm_sve.h>
-typedef __SVFloat32_t sv_float;
-typedef __SVFloat64_t sv_double;
-
-static inline sv_float svargf(float x)  {
-	int n = svcntw();
-	float base[n];
-	for (int i=0; i<n; i++)
-		base[i] = (float)x;
-	base[n-1] = (float) fv[secondcall];
-	return svld1(svptrue_b32(), base);
+static inline float32x4_t
+argf (float x)
+{
+  return (float32x4_t){ x, x, x, fv[secondcall] };
 }
-static inline sv_double svargd(double x) {
-	int n = svcntd();
-	double base[n];
-	for (int i=0; i<n; i++)
-		base[i] = x;
-	base[n-1] = dv[secondcall];
-	return svld1(svptrue_b64(), base);
+static inline float64x2_t
+argd (double x)
+{
+  return (float64x2_t){ x, dv[secondcall] };
+}
+#if WANT_SVE_TESTS
+#include <arm_sve.h>
+
+static inline svfloat32_t
+svargf (float x)
+{
+  int n = svcntw ();
+  float base[n];
+  for (int i = 0; i < n; i++)
+    base[i] = (float) x;
+  base[n - 1] = (float) fv[secondcall];
+  return svld1 (svptrue_b32 (), base);
+}
+static inline svfloat64_t
+svargd (double x)
+{
+  int n = svcntd ();
+  double base[n];
+  for (int i = 0; i < n; i++)
+    base[i] = x;
+  base[n - 1] = dv[secondcall];
+  return svld1 (svptrue_b64 (), base);
 }
 static inline float
-svretf (sv_float vec, svbool_t pg)
+svretf (svfloat32_t vec, svbool_t pg)
 {
   return svlastb_f32 (svpfirst (pg, svpfalse ()), vec);
 }
 static inline double
-svretd (sv_double vec, svbool_t pg)
+svretd (svfloat64_t vec, svbool_t pg)
 {
   return svlastb_f64 (svpfirst (pg, svpfalse ()), vec);
 }
@@ -276,7 +255,7 @@ struct conf
   double softlim;
   double errlim;
   int ignore_zero_sign;
-#if WANT_SVE_MATH
+#if WANT_SVE_TESTS
   svbool_t *pg;
 #endif
 };
@@ -296,7 +275,7 @@ struct fun
     float (*f2) (float, float);
     double (*d1) (double);
     double (*d2) (double, double);
-#if WANT_SVE_MATH
+#if WANT_SVE_TESTS
     float (*f1_pred) (svbool_t, float);
     float (*f2_pred) (svbool_t, float, float);
     double (*d1_pred) (svbool_t, double);
@@ -385,7 +364,7 @@ ulpscale_d (double x)
 static inline float
 call_f1 (const struct fun *f, struct args_f1 a, const struct conf *conf)
 {
-#if WANT_SVE_MATH
+#if WANT_SVE_TESTS
   if (f->is_predicated)
     return f->fun.f1_pred (*conf->pg, a.x);
 #endif
@@ -394,7 +373,7 @@ call_f1 (const struct fun *f, struct args_f1 a, const struct conf *conf)
 static inline float
 call_f2 (const struct fun *f, struct args_f2 a, const struct conf *conf)
 {
-#if WANT_SVE_MATH
+#if WANT_SVE_TESTS
   if (f->is_predicated)
     return f->fun.f2_pred (*conf->pg, a.x, a.x2);
 #endif
@@ -404,7 +383,7 @@ call_f2 (const struct fun *f, struct args_f2 a, const struct conf *conf)
 static inline double
 call_d1 (const struct fun *f, struct args_d1 a, const struct conf *conf)
 {
-#if WANT_SVE_MATH
+#if WANT_SVE_TESTS
   if (f->is_predicated)
     return f->fun.d1_pred (*conf->pg, a.x);
 #endif
@@ -413,7 +392,7 @@ call_d1 (const struct fun *f, struct args_d1 a, const struct conf *conf)
 static inline double
 call_d2 (const struct fun *f, struct args_d2 a, const struct conf *conf)
 {
-#if WANT_SVE_MATH
+#if WANT_SVE_TESTS
   if (f->is_predicated)
     return f->fun.d2_pred (*conf->pg, a.x, a.x2);
 #endif
@@ -629,7 +608,7 @@ usage (void)
 	"    This should be different from tested input in other lanes, and non-special \n"
 	"    (i.e. should not trigger fenv exceptions). Default is 1.");
 #endif
-#if WANT_SVE_MATH
+#if WANT_SVE_TESTS
   puts ("-p: integer input for controlling predicate passed to SVE function. "
 	"If bit N is set, lane N is activated (bits past the vector length "
 	"are ignored). Default is UINT64_MAX (ptrue).");
@@ -779,7 +758,7 @@ main (int argc, char *argv[])
   conf.softlim = 0;
   conf.errlim = INFINITY;
   conf.ignore_zero_sign = 0;
-#if WANT_SVE_MATH
+#if WANT_SVE_TESTS
   uint64_t pg_int = UINT64_MAX;
 #endif
   for (;;)
@@ -829,7 +808,7 @@ main (int argc, char *argv[])
 	case 'z':
 	  conf.ignore_zero_sign = 1;
 	  break;
-#ifdef __vpcs
+#if  __aarch64__ && __linux__
 	case 'c':
 	  argc--;
 	  argv++;
@@ -837,7 +816,7 @@ main (int argc, char *argv[])
 	  dv[0] = strtod(argv[0], 0);
 	  break;
 #endif
-#if WANT_SVE_MATH
+#if WANT_SVE_TESTS
 	case 'p':
 	  argc--;
 	  argv++;
@@ -875,7 +854,7 @@ main (int argc, char *argv[])
       if (strncmp (argv[0], "_ZGVnN", 6) == 0)
 	exit (0);
 #endif
-#if !WANT_SVE_MATH
+#if !WANT_SVE_TESTS
       if (strncmp (argv[0], "_ZGVsMxv", 8) == 0)
 	exit (0);
 #endif
@@ -893,9 +872,13 @@ main (int argc, char *argv[])
   argv++;
   parsegen (&gen, argc, argv, f);
   conf.n = gen.cnt;
-#if WANT_SVE_MATH
+#if WANT_SVE_TESTS
   svbool_t pg = parse_pg (pg_int, f->singleprec);
   conf.pg = &pg;
 #endif
   return cmp (f, &gen, &conf);
 }
+
+#if __aarch64__ && __linux__ && WANT_SVE_TESTS && defined(__clang__)
+#  pragma clang attribute pop
+#endif
