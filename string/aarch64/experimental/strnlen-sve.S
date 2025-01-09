@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
-#include "asmdefs.h"
+#include "../asmdefs.h"
 
 .arch armv8-a+sve
 
